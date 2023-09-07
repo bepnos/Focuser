@@ -14,8 +14,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.purple, brightness: Brightness.dark),
       ),
       home: const MyHomePage(title: 'Focuser'),
     );
@@ -78,10 +79,6 @@ class MyHomePageState extends State<MyHomePage> {
       _ => Placeholder(),
     };
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
       body: page,
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[

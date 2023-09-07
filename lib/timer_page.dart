@@ -71,12 +71,12 @@ class _TimeWidget extends StatelessWidget {
   }
 
   String determineTime() {
-    if (stopwatch.elapsed.inSeconds > 59) {
-      int minutes = stopwatch.elapsed.inMinutes;
-      int seconds = stopwatch.elapsed.inSeconds - (minutes * 60);
-      return "$minutes : $seconds";
-    } else {
-      return stopwatch.elapsed.inSeconds.toString();
-    }
+    int minutes = stopwatch.elapsed.inMinutes;
+    int seconds = stopwatch.elapsed.inSeconds % 60;
+
+    String minutesString = minutes.toString().padLeft(2, '0');
+    String secondsString = seconds.toString().padLeft(2, '0');
+
+    return "$minutesString:$secondsString";
   }
 }
