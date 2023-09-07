@@ -1,42 +1,42 @@
 import "package:flutter/material.dart";
+import "package:focuser/study_data.dart";
+import "package:provider/provider.dart";
 
 class TimerPage extends StatelessWidget {
-  final Stopwatch stopwatch;
-  final Function(String action) onButtonPressed;
   const TimerPage({
     super.key,
-    required this.stopwatch,
-    required this.onButtonPressed,
   });
 
   @override
   Widget build(BuildContext context) {
+    var studyData = Provider.of<StudyData>(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           Text(
-            stopwatch.isRunning ? "Focus!" : " ",
+            studyData.getStopwatch.isRunning ? "Focus!" : " ",
           ),
-          _TimeWidget(stopwatch: stopwatch),
+          _TimeWidget(stopwatch: studyData.getStopwatch),
           const SizedBox(height: 16.0),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ElevatedButton(
                   onPressed: () {
-                    if (stopwatch.isRunning) {
-                      onButtonPressed("pause");
+                    if (studyData.getStopwatch.isRunning) {
+                      studyData.controlButtonPressed("pause");
                     } else {
-                      onButtonPressed("start");
+                      studyData.controlButtonPressed("start");
                     }
                   },
-                  child: Icon(
-                      stopwatch.isRunning ? Icons.pause : Icons.play_arrow)),
+                  child: Icon(studyData.getStopwatch.isRunning
+                      ? Icons.pause
+                      : Icons.play_arrow)),
               const SizedBox(width: 30.0),
               ElevatedButton(
                   onPressed: () {
-                    onButtonPressed("reset");
+                    studyData.controlButtonPressed("reset");
                   },
                   child: Icon(Icons.replay)),
             ],
