@@ -10,7 +10,9 @@ class StudyData extends ChangeNotifier {
   late Timer internalTimer;
   bool counting = false;
   int pageIndex = 0;
-  int currentSelected = 0;
+  int currentSelected = 1;
+  DateTime manualDate = DateTime.now();
+  TimeOfDay manualTime = TimeOfDay(hour: 0, minute: 0);
 
   // general format of stats:
   // [
@@ -22,6 +24,9 @@ class StudyData extends ChangeNotifier {
   Stopwatch get getStopwatch => stopwatch;
   SharedPreferences get getPrefs => prefs;
   List<String> get getProjects => projects;
+  int get getCurrentSelected => currentSelected;
+  int get getPageIndex => pageIndex;
+  DateTime get getManualDate => manualDate;
 
   StudyData() {
     init();
@@ -29,10 +34,6 @@ class StudyData extends ChangeNotifier {
 
   List<DropdownMenuEntry> getDropdownMenuEntries() {
     return [
-      const DropdownMenuEntry(
-        value: 0,
-        label: "Daily",
-      ),
       const DropdownMenuEntry(
         value: 1,
         label: "Weekly",
@@ -110,6 +111,35 @@ class StudyData extends ChangeNotifier {
       "project": "App-Development"
     };
     stats.add(newSession);
+    newSession = {
+      "date": "2023-09-09",
+      "time": 26000,
+      "project": "App-Development"
+    };
+    stats.add(newSession);
+    newSession = {
+      "date": "2023-09-03",
+      "time": 33000,
+      "project": "App-Development"
+    };
+    stats.add(newSession);
+    newSession = {
+      "date": "2023-09-02",
+      "time": 31000,
+      "project": "App-Development"
+    };
+    stats.add(newSession);
+    newSession = {
+      "date": "2023-08-28",
+      "time": 25000,
+      "project": "App-Development"
+    };
+    stats.add(newSession);
+    newSession = {
+      "date": "2023-08-27",
+      "time": 26000,
+      "project": "App-Development"
+    };
 
     prefs.setString("stats", jsonEncode(stats));
     notifyListeners();
@@ -119,12 +149,27 @@ class StudyData extends ChangeNotifier {
     aggregatedWeeklyData();
   }
 
-  Map<String, int> testGraph() {
-    Map<String, int> weeklyData = {};
-    weeklyData["2021-09-01"] = 100;
-    weeklyData["2021-09-02"] = 200;
-    weeklyData["2021-09-03"] = 300;
-    return weeklyData;
+  void manualAdd(DateTime date) {
+    manualDate = date;
+    notifyListeners();
+  }
+
+  void manualAddTime(TimeOfDay time) {
+    manualTime = time;
+    notifyListeners();
+  }
+
+  void manualAddComplete() {
+    Map<String, dynamic> newSession = {
+      "date": manualDate.toString().substring(0, 10),
+      "time": manualTime.hour * 3600 + manualTime.minute * 60,
+      "project": "placeholder"
+    };
+    stats.add(newSession);
+    prefs.setString("stats", jsonEncode(stats));
+    manualDate = DateTime.now();
+    manualTime = const TimeOfDay(hour: 00, minute: 0);
+    notifyListeners();
   }
 
   void loadStats() {
@@ -297,22 +342,77 @@ class StudyData extends ChangeNotifier {
     return weeklyData;
   }
 
+  Map<String, double> aggregatedMonthlyData() {
+    DateTime today = DateTime.now();
+    DateTime lastMonth = today.subtract(const Duration(days: 30));
+    Map<String, double> monthlyData = {};
+
+    for (int i = 0; i < stats.length; i++) {
+      DateTime date = DateTime.parse(stats[i]["date"]);
+      if (date.isAfter(lastMonth)) {
+        String dateString = (stats[i]["date"].split("-")[1] +
+            "-" +
+            stats[i]["date"].split("-")[2]);
+        if (monthlyData.containsKey(dateString)) {
+          monthlyData[dateString] =
+              (monthlyData[dateString]! + (stats[i]["time"] / 3600));
+        } else {
+          monthlyData[dateString] = stats[i]["time"] / 3600;
+        }
+      }
+    }
+    for (int i = 1; i <= 30; i++) {
+      DateTime date = lastMonth.add(Duration(days: i));
+      String dateString = date.toString().substring(0, 10).split("-")[1] +
+          "-" +
+          date.toString().substring(0, 10).split("-")[2];
+      if (!monthlyData.containsKey(dateString)) {
+        monthlyData[dateString] = 0;
+      }
+    }
+    monthlyData = Map.fromEntries(monthlyData.entries.toList()
+      ..sort((e1, e2) => e1.key.compareTo(e2.key)));
+    return monthlyData;
+  }
+
   List<ColumnSeries<ChartData, String>> getWeeklySeries() {
     return <ColumnSeries<ChartData, String>>[
       ColumnSeries<ChartData, String>(
-        dataSource: getChartDataList(),
+        dataSource: getChartDataListWeekly(),
         xValueMapper: (ChartData sales, _) => sales.x.toString(),
         yValueMapper: (ChartData sales, _) => sales.y,
         dataLabelSettings: const DataLabelSettings(
             isVisible: false, textStyle: TextStyle(fontSize: 10)),
+        color: Colors.purpleAccent,
       )
     ];
   }
 
-  List<ChartData> getChartDataList() {
+  List<ColumnSeries<ChartData, String>> getMonthlySeries() {
+    return <ColumnSeries<ChartData, String>>[
+      ColumnSeries<ChartData, String>(
+        dataSource: getChartDataListMonthly(),
+        xValueMapper: (ChartData sales, _) => sales.x.toString(),
+        yValueMapper: (ChartData sales, _) => sales.y,
+        dataLabelSettings: const DataLabelSettings(
+            isVisible: false, textStyle: TextStyle(fontSize: 10)),
+        color: Colors.purpleAccent,
+      )
+    ];
+  }
+
+  List<ChartData> getChartDataListWeekly() {
     List<ChartData> chartDataList = [];
     for (var key in aggregatedWeeklyData().keys) {
       chartDataList.add(ChartData(x: key, y: aggregatedWeeklyData()[key]));
+    }
+    return chartDataList;
+  }
+
+  List<ChartData> getChartDataListMonthly() {
+    List<ChartData> chartDataList = [];
+    for (var key in aggregatedMonthlyData().keys) {
+      chartDataList.add(ChartData(x: key, y: aggregatedMonthlyData()[key]));
     }
     return chartDataList;
   }
