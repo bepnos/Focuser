@@ -2,9 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import "timer_page.dart";
+import "stats_page.dart";
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import 'package:focuser/study_data.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => StudyData(),
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -23,58 +32,16 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyHomePage extends StatefulWidget {
+class MyHomePage extends StatelessWidget {
   const MyHomePage({super.key, required this.title});
   final String title;
-  @override
-  State<MyHomePage> createState() => MyHomePageState();
-}
-
-class MyHomePageState extends State<MyHomePage> {
-  bool counting = false;
-  Stopwatch stopwatch = Stopwatch();
-  late Timer _internalTimer;
-  var selectedIndex = 0;
-
-  void controlButtonPressed(String action) {
-    switch (action) {
-      case "start":
-        if (!stopwatch.isRunning) {
-          stopwatch.start();
-          setState(() {});
-          _internalTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-            setState(() {});
-          });
-        }
-        break;
-      case "pause":
-        if (stopwatch.isRunning) {
-          stopwatch.stop();
-          _internalTimer.cancel();
-          setState(() {});
-        }
-        break;
-      case "reset":
-        stopwatch.stop();
-        stopwatch.reset();
-        _internalTimer.cancel();
-        setState(() {});
-        break;
-    }
-  }
-
-  void onItemTapped(int index) {
-    setState(() {
-      selectedIndex = index;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
-    Widget page = switch (selectedIndex) {
-      0 =>
-        TimerPage(stopwatch: stopwatch, onButtonPressed: controlButtonPressed),
-      1 => Placeholder(),
+    var studyData = Provider.of<StudyData>(context);
+    Widget page = switch (studyData.pageIndex) {
+      0 => TimerPage(),
+      1 => StatsPage(),
       2 => Placeholder(),
       _ => Placeholder(),
     };
@@ -87,9 +54,9 @@ class MyHomePageState extends State<MyHomePage> {
           BottomNavigationBarItem(
               icon: Icon(Icons.settings), label: 'Settings'),
         ],
-        currentIndex: selectedIndex,
+        currentIndex: studyData.pageIndex,
         selectedItemColor: Theme.of(context).colorScheme.primary,
-        onTap: onItemTapped,
+        onTap: (index) => studyData.changePage(index),
       ),
     );
   }
